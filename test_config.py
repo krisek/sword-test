@@ -162,6 +162,59 @@ def test_Direction(modulename, moduleconf):
     assert True
   assert Direction in ['LtoR', 'RtoL', 'BiDi']
 
+def test_DisplayLevel(modulename, moduleconf):
+  config = get_config(moduleconf)
+  DisplayLevel = 1
+  try:
+    DisplayLevel = config[modulename]['DisplayLevel']
+  except:
+    assert True
+  assert int(DisplayLevel)
+
+def test_Feature(modulename, moduleconf):
+  config = get_config(moduleconf)
+  Feature = []
+  try:
+    Feature = config[modulename]['Feature'].split('\n')
+  except:
+    assert True
+
+  for feature in Feature:
+    if feauture not in ['StrongsNumbers', 'GreekDef', 'HebrewDef', 'GreekParse', 'HebrewParse', 'DailyDevotion', 'Glossary', 'Images', 'NoParagraphs']:
+        assert False
+
+  assert True
+
+def test_SwordVersionDate(modulename, moduleconf):
+  config = get_config(moduleconf)
+
+  try:
+    SwordVersionDate = config[modulename]['SwordVersionDate']
+  except:
+    assert False
+
+  assert re.search(r'^\d\d\d\d\-\d\d-\d\d$', SwordVersionDate)
+
+
+def test_Category(modulename, moduleconf):
+  config = get_config(moduleconf)
+  Category = 'Biblical Texts'
+  try:
+    Category = config[modulename]['Category']
+  except:
+    assert True
+
+  assert Category in ['Biblical Texts', 'Commentaries', 'Lexicons / Dictionaries', 'Glossaries', 'Daily Devotional', 'Generic Books', 'Maps', 'Images', 'Cults / Unorthodox / Questionable Material', 'Essays']
+
+
+def test_DistributionLicence(modulename, moduleconf):
+  config = get_config(moduleconf)
+  try:
+    Licence = config[modulename]['DistributionLicence']
+  except:
+    assert False
+
+  assert Licence in ['Public Domain', 'Copyrighted', 'Copyrighted; Permission to distribute granted to CrossWire[1]', 'Copyrighted; Permission granted to distribute non-commercially in SWORD format', 'Copyrighted; Free non-commercial distribution', 'Copyrighted; Freely distributable', 'GFDL', 'GPL', 'Creative Commons: BY-NC-ND 4.0', 'Creative Commons: BY-NC-SA 4.0', 'Creative Commons: BY-NC 4.0', 'Creative Commons: BY-ND 4.0', 'Creative Commons: BY-SA 4.0', 'Creative Commons: BY 4.0', 'Creative Commons: CC0']
 
 
 

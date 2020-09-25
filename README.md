@@ -1,6 +1,6 @@
 # sword-test
 
-This repository is a collection of test cases for (Sword)[https://www.crosswire.org/sword/index.jsp] module development.
+This repository is a collection of test cases for [Sword](https://www.crosswire.org/sword/index.jsp) module development.
 
 ## Installation
 

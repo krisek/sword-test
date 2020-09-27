@@ -8,3 +8,5 @@ pyparsing==2.4.7
 pytest==6.0.2
 six==1.15.0
 toml==0.10.1
+iso-639
+

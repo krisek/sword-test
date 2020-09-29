@@ -107,14 +107,14 @@ def test_aphostrophes_dutch(modulexml): #dutch
         assert pytest.xmltext.count('“') == pytest.xmltext.count('”')
 
 def test_aphostrophes_5(modulexml): #english
-    if pytest.lang and pytest.lang.part1 in ['en']:
-        assert pytest.xmltext.count('‘') == pytest.xmltext.count('’')
+    #if pytest.lang and pytest.lang.part1 in ['en']:
+    assert pytest.xmltext.count('‘') == pytest.xmltext.count('’')
 
 def test_aphostrophes_6(modulexml): #finish, swedish
     if pytest.lang and pytest.lang.part1 in ['fi', 'sv']:
         assert pytest.xmltext.count('”') % 2 == 0
 
-def test_aphostrophes_7(modulexml): #french, spanish, portugese, greek «...» danish »...«
+def test_aphostrophes_7(modulexml): #french, spanish, portugese, greek italian «...» danish »...«
     assert pytest.xmltext.count('«') == pytest.xmltext.count('»')
 
 def test_aphostrophes_8(modulexml): #hungarian, polish, romanian, croatian
@@ -159,5 +159,54 @@ def test_osis_references_1():
         nonconform_references.append({'verse': reference.parentNode.parentNode.getAttribute('osisID'), 'ref': osisRef})
 
     assert nonconform_references == []
+
+def test_osis_references_2():
+    invalid_references = []
+    osisIDs = []
+    #get osisIDs
+    for verse in pytest.xml.getElementsByTagName('verse'):
+        osisIDs.append(verse.getAttribute('osisID'))
+
+
+
+
+    for reference in pytest.xml.getElementsByTagName('reference'):
+        osisRef = reference.getAttribute('osisRef')
+        osisRefText = reference.firstChild.data
+        matchObj = re.search(r'^(\w+\.\d+\.\d+)\-(\w+\.\d+\.\d+)$', osisRef)
+
+        if matchObj:
+            if(matchObj[1] not in osisIDs or matchObj[2] not in osisIDs):
+                invalid_references.append({'verse': reference.parentNode.parentNode.getAttribute('osisID'), 'ref': osisRef})
+
+
+        else:
+            matchObj = re.search(r'^(\w+\.\d+\.\d+)$', osisRef)
+            if matchObj:
+                if(matchObj[1] not in osisIDs):
+                    invalid_references.append({'verse': reference.parentNode.parentNode.getAttribute('osisID'), 'ref': osisRef})
+
+
+        if(matchObj is None):
+            invalid_references.append({'verse': reference.parentNode.parentNode.getAttribute('osisID'), 'ref': osisRef})
+
+
+
+
+
+
+    assert invalid_references == []
+
+def test_punctuation_1():
+    punctuation_issues = []
+    for verse in pytest.xml.getElementsByTagName('verse'):
+        if  verse.firstChild is not None and re.search(r'([\.\,\;\:][^\s“”’»«\)])', verse.firstChild.data):
+            matchObj = re.search(r'([\.\,\;\:][^\s“”’»«\)])', verse.firstChild.data)
+            punctuation_issues.append({verse.getAttribute('osisID'): matchObj[1]})
+
+    #print(punctuation_issues)
+    assert len(punctuation_issues) == 0
+
+
 
 

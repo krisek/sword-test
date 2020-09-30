@@ -176,7 +176,7 @@ def test_osis_references_2():
         matchObj = re.search(r'^(\w+\.\d+\.\d+)\-(\w+\.\d+\.\d+)$', osisRef)
 
         if matchObj:
-            if(matchObj[1] not in osisIDs or matchObj[2] not in osisIDs):
+            if(matchObj[1] not in osisIDs):# or matchObj[2] not in osisIDs):
                 invalid_references.append({'verse': reference.parentNode.parentNode.getAttribute('osisID'), 'ref': osisRef})
 
 

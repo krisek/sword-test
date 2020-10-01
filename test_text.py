@@ -3,6 +3,7 @@ import configparser
 from collections import OrderedDict
 import re
 import xml.dom.minidom
+from string import punctuation
 
 pytest.bible_books = ['Gen', 'Exod', 'Lev', 'Num', 'Deut', 'Josh', 'Judg', 'Ruth', '1Sam', '2Sam', '1Kgs', '2Kgs', '1Chr', '2Chr', 'Ezra', 'Neh', 'Tob', 'Jdt', 'Esth', 'Job', 'Ps', 'Prov', 'Eccl', 'Song', 'Wis', 'Sir', 'Isa', 'Jer', 'Lam', 'Bar', 'Ezek', 'Dan', 'Hos', 'Joel', 'Amos', 'Obad', 'Jonah', 'Mic', 'Nah', 'Hab', 'Zeph', 'Hag', 'Zech', 'Mal', '1Macc', '2Macc', 'Matt', 'Mark', 'Luke', 'John', 'Acts', 'Rom', '1Cor', '2Cor', 'Gal', 'Eph', 'Phil', 'Col', '1Thess', '2Thess', '1Tim', '2Tim', 'Titus', 'Phlm', 'Heb', 'Jas', '1Pet', '2Pet', '1John', '2John', '3John', 'Jude', 'Rev']
 
@@ -167,9 +168,6 @@ def test_osis_references_2():
     for verse in pytest.xml.getElementsByTagName('verse'):
         osisIDs.append(verse.getAttribute('osisID'))
 
-
-
-
     for reference in pytest.xml.getElementsByTagName('reference'):
         osisRef = reference.getAttribute('osisRef')
         osisRefText = reference.firstChild.data
@@ -190,16 +188,11 @@ def test_osis_references_2():
         if(matchObj is None):
             invalid_references.append({'verse': reference.parentNode.parentNode.getAttribute('osisID'), 'ref': osisRef})
 
-
-
-
-
-
     assert invalid_references == []
 
 def test_punctuation_1():
     punctuation_issues = []
-    for verse in pytest.xml.getElementsByTagName('verse'):
+    for verse in pytest.xml.getElementsByTagName('verse') + pytest.xml.getElementsByTagName('title'):
         if  verse.firstChild is not None and re.search(r'([\.\,\;\:][^\s“”’»«\)])', verse.firstChild.data):
             matchObj = re.search(r'([\.\,\;\:][^\s“”’»«\)])', verse.firstChild.data)
             punctuation_issues.append({verse.getAttribute('osisID'): matchObj[1]})
@@ -207,6 +200,25 @@ def test_punctuation_1():
     #print(punctuation_issues)
     assert len(punctuation_issues) == 0
 
+def test_alphanum_1():
+    verses_with_strange_characters = []
+    apostrophes = "„“”‘’«»"
+    dashes = "-–—"
 
+    for verse in pytest.xml.getElementsByTagName('verse') + pytest.xml.getElementsByTagName('title') + pytest.xml.getElementsByTagName('reference'):
+        verse_normalized_text = ""
+        if  verse.firstChild is None or verse.firstChild.data is None:
+            continue
+            #verse_normalized_text = normalize('NFC', verse.firstChild.data)
+        verse_normalized_text = verse.firstChild.data
+        non_matching = re.findall(r'[^\w\d {}{}{}\n]+'.format(re.escape(punctuation), apostrophes, re.escape(dashes)), verse_normalized_text, flags=re.IGNORECASE|re.UNICODE)
+        if len(non_matching) > 0:
+            verses_with_strange_characters.append({
+                'non_matching': non_matching,
+                'verse': verse_normalized_text,
+                'osisID': verse.getAttribute('osisID')
+            })
+
+    assert verses_with_strange_characters == []
 
 

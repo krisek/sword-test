@@ -4,6 +4,8 @@ from collections import OrderedDict
 import re
 import xml.dom.minidom
 from string import punctuation
+from iso639 import languages
+
 
 pytest.bible_books = ['Gen', 'Exod', 'Lev', 'Num', 'Deut', 'Josh', 'Judg', 'Ruth', '1Sam', '2Sam', '1Kgs', '2Kgs', '1Chr', '2Chr', 'Ezra', 'Neh', 'Tob', 'Jdt', 'Esth', 'Job', 'Ps', 'Prov', 'Eccl', 'Song', 'Wis', 'Sir', 'Isa', 'Jer', 'Lam', 'Bar', 'Ezek', 'Dan', 'Hos', 'Joel', 'Amos', 'Obad', 'Jonah', 'Mic', 'Nah', 'Hab', 'Zeph', 'Hag', 'Zech', 'Mal', '1Macc', '2Macc', 'Matt', 'Mark', 'Luke', 'John', 'Acts', 'Rom', '1Cor', '2Cor', 'Gal', 'Eph', 'Phil', 'Col', '1Thess', '2Thess', '1Tim', '2Tim', 'Titus', 'Phlm', 'Heb', 'Jas', '1Pet', '2Pet', '1John', '2John', '3John', 'Jude', 'Rev']
 
@@ -31,6 +33,44 @@ pytest.xml_xmlns_osis = ''
 pytest.xml_xsi_schemaLocation = ''
 
 
+def find_language(lang):
+
+  found = False
+  print(lang)
+  try:
+    lang_639 = languages.get(part1 = lang)
+    found = True
+  except:
+    pass
+
+  if not found:
+    try:
+      lang_639 = languages.get(part2b = lang)
+      found = True
+    except:
+      pass
+
+  if not found:
+    try:
+      lang_639 = languages.get(part2t = lang)
+      found = True
+    except:
+      pass
+
+  if not found:
+    try:
+      lang_639 = languages.get(part3 = lang)
+      found = True
+    except:
+      pass
+
+  if not found:
+    try:
+      lang_639 = languages.get(part5 = lang)
+      found = True
+    except:
+      pass
+  return (lang_639, found)
 
 def test_readfile(modulexml):
     with open(modulexml, 'r') as reader:
@@ -53,44 +93,10 @@ def test_init(moduleconf, modulename):
     pass
 
   lang = re.sub(r'\-.*', r'', Lang)
-  found = False
 
-  try:
-    pytest.lang = languages.get(part1 = lang)
-    found = True
-  except:
-    pass
+  (pytest.lang, found) = find_language(lang)
 
-  if not found:
-    try:
-      pytest.lang = languages.get(part2b = lang)
-      found = True
-    except:
-      pass
-
-  if not found:
-    try:
-      pytest.lang = languages.get(part2t = lang)
-      found = True
-    except:
-      pass
-
-  if not found:
-    try:
-      pytest.lang = languages.get(part3 = lang)
-      found = True
-    except:
-      pass
-
-  if not found:
-    try:
-      pytest.lang = languages.get(part5 = lang)
-      found = True
-    except:
-      pass
-
-
-  assert True
+  assert found
 
 
 
@@ -190,6 +196,14 @@ def test_osis_references_2():
 
     assert invalid_references == []
 
+def test_empty_verses_1():
+    verses_with_no_text = []
+
+    for verse in pytest.xml.getElementsByTagName('verse'):
+        if  verse.firstChild is None or verse.firstChild.data is None:
+            verses_with_no_text.append(verse.getAttribute('osisID'))
+    assert verses_with_no_text == []
+
 def test_punctuation_1():
     punctuation_issues = []
     for verse in pytest.xml.getElementsByTagName('verse') + pytest.xml.getElementsByTagName('title'):
@@ -220,5 +234,49 @@ def test_alphanum_1():
             })
 
     assert verses_with_strange_characters == []
+
+def test_versification_refsystem():
+    Versification = pytest.config[pytest.modulename]['Versification']
+    refsystem_issues = []
+    for refsystem in pytest.xml.getElementsByTagName('refSystem'):
+        if refsystem.firstChild.data != 'Bible.' + Versification:
+            refsystem_issues.append({'is': refsystem.firstChild.data, 'should': 'Bible.' + Versification})
+    assert refsystem_issues == []
+
+"""
+<osisText osisText="HunKar" osisRefWork="Bible" xml:lang="hu"  canonical="true">
+
+        <header>
+                <work osisWork="HunKar">
+
+"""
+
+def test_osis_identifier():
+    identifier = pytest.xml.getElementsByTagName('identifier')[0]
+    assert identifier.firstChild.data == 'Bible.' + pytest.modulename
+
+def test_osis_work():
+    problematic_osis_work = []
+    for work in pytest.xml.getElementsByTagName('work'):
+        if work.getAttribute('osisWork') not in [pytest.modulename, 'defaultReferenceScheme']:
+            problematic_osis_work.append(work.getAttribute('osisWork'))
+
+    assert problematic_osis_work == []
+
+def test_osis_text_1():
+    osisText = pytest.xml.getElementsByTagName('osisText')[0]
+    assert  pytest.modulename == osisText.getAttribute('osisIDWork')
+
+def test_osis_text_2():
+    osisText = pytest.xml.getElementsByTagName('osisText')[0]
+    lang = osisText.getAttribute('xml:lang')
+    assert lang == pytest.lang.part1
+
+
+def test_osis_text_3():
+    osisText = pytest.xml.getElementsByTagName('osisText')[0]
+    osisRefWork = osisText.getAttribute('osisRefWork')
+    assert osisRefWork == 'Bible'
+
 
 

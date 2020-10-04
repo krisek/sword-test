@@ -38,7 +38,7 @@ pytest.xml_xsi_schemaLocation = ''
 def find_language(lang):
 
   found = False
-  print(lang)
+  #print(lang)
   try:
     lang_639 = languages.get(part1 = lang)
     found = True

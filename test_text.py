@@ -5,7 +5,9 @@ import re
 import xml.dom.minidom
 from string import punctuation
 from iso639 import languages
-
+import unicodedata
+import itertools
+import sys
 
 pytest.bible_books = ['Gen', 'Exod', 'Lev', 'Num', 'Deut', 'Josh', 'Judg', 'Ruth', '1Sam', '2Sam', '1Kgs', '2Kgs', '1Chr', '2Chr', 'Ezra', 'Neh', 'Tob', 'Jdt', 'Esth', 'Job', 'Ps', 'Prov', 'Eccl', 'Song', 'Wis', 'Sir', 'Isa', 'Jer', 'Lam', 'Bar', 'Ezek', 'Dan', 'Hos', 'Joel', 'Amos', 'Obad', 'Jonah', 'Mic', 'Nah', 'Hab', 'Zeph', 'Hag', 'Zech', 'Mal', '1Macc', '2Macc', 'Matt', 'Mark', 'Luke', 'John', 'Acts', 'Rom', '1Cor', '2Cor', 'Gal', 'Eph', 'Phil', 'Col', '1Thess', '2Thess', '1Tim', '2Tim', 'Titus', 'Phlm', 'Heb', 'Jas', '1Pet', '2Pet', '1John', '2John', '3John', 'Jude', 'Rev']
 
@@ -211,7 +213,9 @@ def test_punctuation_1():
             matchObj = re.search(r'([\.\,\;\:][^\s“”’»«\)])', verse.firstChild.data)
             punctuation_issues.append({verse.getAttribute('osisID'): matchObj[1]})
 
-    #print(punctuation_issues)
+    if(len(punctuation_issues) != 0):
+        print(punctuation_issues)
+
     assert len(punctuation_issues) == 0
 
 def test_alphanum_1():
@@ -279,4 +283,59 @@ def test_osis_text_3():
     assert osisRefWork == 'Bible'
 
 
+#    U+002D	-	2,461	HYPHEN-MINUS
+#    U+2013	–	100	EN DASH
 
+def test_parenthesis():
+    assert pytest.xmltext.count('(') == pytest.xmltext.count(')')
+
+def test_hyphens():
+    #pytest.xmltext.count('-')
+    #hypens caonot have two spaces
+    verses_with_problematic_hypens = []
+
+    for verse in pytest.xml.getElementsByTagName('verse') + pytest.xml.getElementsByTagName('title') + pytest.xml.getElementsByTagName('reference'):
+        if  verse.firstChild is None or verse.firstChild.data is None:
+            continue
+        if re.search(r'\s-\s', verse.firstChild.data):
+            verses_with_problematic_hypens.append(verse.getAttribute('osisID'))
+
+
+    assert verses_with_problematic_hypens == []
+
+def test_minus_sign():
+    hyphen_minus = 0 #pytest.xmltext.count('-')
+    en_dash = 0 #pytest.xmltext.count('–')
+    minus_sign = 0 #; −
+    for verse in pytest.xml.getElementsByTagName('verse') + pytest.xml.getElementsByTagName('title') + pytest.xml.getElementsByTagName('reference'):
+        if  verse.firstChild is None or verse.firstChild.data is None:
+            continue
+        hyphen_minus = hyphen_minus + verse.firstChild.data.count('-')
+        minus_sign = minus_sign + verse.firstChild.data.count('−')
+        en_dash = en_dash + verse.firstChild.data.count('–')
+
+
+    assert minus_sign == 0
+
+
+
+
+def test_control_characters():
+
+    all_chars = (chr(i) for i in range(sys.maxunicode))
+    categories = {'Cc'}
+    control_chars = ''.join(c for c in all_chars if unicodedata.category(c) in categories)
+    # or equivalently and much more efficiently
+    ##control_chars = ''.join(map(chr, itertools.chain(range(0x00,0x20), range(0x7f,0xa0))))
+
+    control_char_re = re.compile('[%s]' % re.escape(control_chars))
+
+
+    control_char_count = 0
+    for verse in pytest.xml.getElementsByTagName('verse') + pytest.xml.getElementsByTagName('title') + pytest.xml.getElementsByTagName('reference'):
+        if  verse.firstChild is None or verse.firstChild.data is None:
+            continue
+
+        control_char_count = control_char_count + len(control_char_re.findall(verse.firstChild.data))
+
+    assert control_char_count == 0

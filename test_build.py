@@ -87,29 +87,38 @@ def test_sword_alternate_versifications(modulexml):
         os.makedirs(module_target)
         os.makedirs('{}/build/mods.d'.format(dirpath))
         shutil.copyfile(pytest.moduleconf, '{}/build/mods.d/{}'.format(dirpath, os.path.basename(pytest.moduleconf)))
-
-        osis2mod_result = subprocess.run(['osis2mod', module_target, modulexml, '-v', versification, '-z'], stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-        #osis2mod  build/modules/texts/ztext/hunkal osis.xml -v Vulg -z 2>/dev/null
-        stdout = osis2mod_result.stdout.decode('utf-8')
-        stderr = osis2mod_result.stderr.decode('utf-8')
         versification_issues = 0
         reference_errors = 0
         other_issues = []
+        try:
+            osis2mod_result = subprocess.run(['osis2mod', module_target, modulexml, '-v', versification, '-z'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10 )
+            #osis2mod  build/modules/texts/ztext/hunkal osis.xml -v Vulg -z 2>/dev/null
+            stdout = osis2mod_result.stdout.decode('utf-8')
+            stderr = osis2mod_result.stderr.decode('utf-8')
+            
 
-        for line in stdout.split('\n'):
-            if re.search(r'^INFO\(V11N\)', line):
-                versification_issues = versification_issues + 1
-            elif re.search(r'^ERROR\(REF\)', line):
-                reference_errors = reference_errors + 1
-            elif re.search(r'^INFO\(WRITE\)', line):
-                pass
-            elif re.search(r'^WARNING\(UTF8\): osis2mod is not compiled with support for ICU. Assuming -N.', line):
-                pass
-            elif re.search(r'^$', line):
-                pass
-            else:
-                other_issues.append(line)
+            for line in stdout.split('\n'):
+                if re.search(r'^INFO\(V11N\)', line):
+                    versification_issues = versification_issues + 1
+                elif re.search(r'^ERROR\(REF\)', line):
+                    reference_errors = reference_errors + 1
+                elif re.search(r'^INFO\(WRITE\)', line):
+                    pass
+                elif re.search(r'^WARNING\(UTF8\): osis2mod is not compiled with support for ICU. Assuming -N.', line):
+                    pass
+                elif re.search(r'^$', line):
+                    pass
+                else:
+                    other_issues.append(line)
+        except Exception as e: 
+            template = "{0} exception. Arguments:\n{1!r}"
+            message = template.format(type(e).__name__, e.args)
+            print(message)
+            
+        
         print('{} versification issues {} reference_errors {} other issues {}'.format(versification, versification_issues, reference_errors, len(other_issues)))
+            
+        
         #if(len(other_issues) > 0):
         #    print('other issues (top)')
         #    print(other_issues[:5])
